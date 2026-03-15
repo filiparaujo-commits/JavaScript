@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Antecipa+</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #0d1b2e;
+      color: #cdd6f4;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      padding: 28px 16px 80px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -180px; left: -180px;
+      width: 520px; height: 520px;
+      background: radial-gradient(circle, rgba(56,139,253,0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -150px; right: -150px;
+      width: 480px; height: 480px;
+      background: radial-gradient(circle, rgba(79,70,229,0.1) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrap { max-width: 480px; margin: 0 auto; position: relative; z-index: 1; }
+
+    /* HEADER */
+    .header { margin-bottom: 32px; }
+    .header h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff; line-height: 1.15; text-shadow: 0 0 30px rgba(78,158,255,0.3); }
+    .header h1 span { color: #7ec8ff; }
+    .header p { font-size: 11px; color: #4a5a7a; margin-top: 6px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+    /* CARD */
+    .card {
+      background: #111e33;
+      border: 1px solid #1e3050;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #4e9eff;
+      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-title::after { content: ''; flex: 1; height: 1px; background: #1e3050; }
+
+    /* FIELDS */
+    .field { margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label {
+      display: block; font-size: 11px; font-weight: 600;
+      color: #4a5a7a; letter-spacing: 0.06em;
+      text-transform: uppercase; margin-bottom: 6px;
+    }
+    .field input {
+      width: 100%;
+      background: #0d1b2e;
+      border: 1px solid #1e3050;
+      border-radius: 10px;
+      color: #e8edf8;
+      font-size: 15px;
+      padding: 11px 14px;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      -webkit-appearance: none; appearance: none;
+    }
+    .field input:focus { border-color: #4e9eff; background: rgba(78,158,255,0.06); }
+
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .rate-row { display: flex; align-items: center; gap: 10px; }
+    .rate-row input { width: 100px; flex-shrink: 0; }
+    .rate-suffix { font-size: 12px; color: #4a5a7a; }
+
+    /* PARCELAS */
+    .parcelas-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .parcelas-header .card-title { margin-bottom: 0; }
+
+    .toggle-all {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+      color: #4e9eff; background: none; border: none; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .parcelas-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .parcela-row {
+      display: grid;
+      grid-template-columns: 26px 1fr auto auto;
+      align-items: center;
+      gap: 10px;
+      background: #0d1b2e;
+      border: 1px solid #1e3050;
+      border-radius: 10px;
+      padding: 12px 14px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: border-color 0.15s, background 0.15s;
+      user-select: none;
+    }
+    .parcela-row.selected {
+      border-color: #4e9eff;
+      background: rgba(78,158,255,0.08);
+    }
+
+    .p-num { font-size: 11px; font-weight: 500; color: #4a5a7a; text-align: center; }
+    .parcela-row.selected .p-num { color: #4e9eff; }
+
+    .p-venc { font-size: 12px; color: #8899bb; }
+    .p-dias { font-size: 10px; color: #4a5a7a; margin-top: 2px; }
+
+    .p-val { text-align: right; }
+    .p-original { font-size: 11px; color: #4a5a7a; text-decoration: line-through; }
+    .p-desc { font-size: 14px; font-weight: 600; color: #e8edf8; }
+    .parcela-row.selected .p-desc { color: #4e9eff; }
+
+    .p-eco { text-align: right; }
+    .p-eco-val { font-size: 11px; color: #4e9eff; }
+    .p-eco-label { font-size: 9px; color: #4a5a7a; text-transform: uppercase; letter-spacing: 0.04em; }
+
+    .hint { font-size: 11px; color: #4a5a7a; margin-top: 10px; }
+
+    /* BOTÃO */
+    .btn-calc {
+      width: 100%; background: #4e9eff; border: none; border-radius: 12px;
+      color: #0d1b2e; font-size: 15px; font-weight: 800; letter-spacing: 0.02em;
+      padding: 16px; cursor: pointer; margin-top: 4px;
+      transition: opacity 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-calc:active { transform: scale(0.98); opacity: 0.9; }
+
+    /* ERRO */
+    .error {
+      background: rgba(255,80,80,0.1); border: 1px solid rgba(255,80,80,0.3);
+      border-radius: 10px; padding: 12px 16px;
+      font-size: 13px; color: #ff9090; margin-bottom: 12px;
+    }
+
+    /* RESUMO */
+    .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+
+    .badge {
+      font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 20px;
+      background: rgba(78,158,255,0.15); color: #4e9eff;
+      border: 1px solid rgba(78,158,255,0.3); letter-spacing: 0.05em;
+    }
+
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 0 0 16px; }
+
+    .summary-box { background: #0d1b2e; border: 1px solid #1e3050; border-radius: 12px; padding: 14px; }
+    .summary-box.highlight { background: rgba(78,158,255,0.08); border-color: rgba(78,158,255,0.4); }
+    .summary-box.full { grid-column: 1 / -1; background: rgba(78,158,255,0.06); border-color: rgba(78,158,255,0.3); }
+
+    .s-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #4a5a7a; margin-bottom: 6px; }
+    .summary-box.highlight .s-label, .summary-box.full .s-label { color: #4e9eff; }
+
+    .s-val { font-size: 18px; font-weight: 600; color: #e8edf8; }
+    .s-val.small { font-size: 14px; }
+    .s-val.big { font-size: 22px; color: #4e9eff; }
+    .summary-box.highlight .s-val { color: #4e9eff; }
+
+    .divider { height: 1px; background: #1e3050; margin: 14px 0; }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="header">
+      <h1>Antecipa<span>+</span></h1>
+      <p>Calculadora de antecipação de parcelas</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Configurações</div>
+      <div class="field">
+        <label>Taxa de desconto anual</label>
+        <div class="rate-row">
+          <input type="number" inputmode="decimal" id="taxaAnual" value="9.5" />
+          <span class="rate-suffix">% a.a. — juros compostos</span>
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>Dia de vencimento</label>
+          <input type="number" inputmode="numeric" id="diaVenc" value="10" min="1" max="31" placeholder="ex: 10" />
+        </div>
+        <div class="field">
+          <label>Fechamento (dias antes)</label>
+          <input type="number" inputmode="numeric" id="diasFech" value="7" min="0" max="30" placeholder="ex: 7" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Compra</div>
+      <div class="field">
+        <label>Valor total (R$)</label>
+        <input type="number" inputmode="decimal" id="totalCompra" placeholder="0,00" />
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>Nº de parcelas</label>
+          <input type="number" inputmode="numeric" id="numParcelas" value="12" min="1" max="48" />
+        </div>
+        <div class="field">
+          <label>Data da compra</label>
+          <input type="date" id="dataCompra" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card hidden" id="cardParcelas">
+      <div class="parcelas-header">
+        <div class="card-title" style="margin-bottom:0">Parcelas</div>
+        <button class="toggle-all" id="btnToggleAll">Marcar todas</button>
+      </div>
+      <div class="parcelas-list" id="listaParcelas"></div>
+      <p class="hint">Toque nas parcelas para selecionar quais antecipar</p>
+    </div>
+
+    <div class="error hidden" id="erro"></div>
+
+    <button class="btn-calc hidden" id="btnCalc">Calcular antecipação</button>
+
+    <div class="card hidden" id="cardResultado" style="margin-top:16px">
+      <div class="results-header">
+        <div class="card-title" style="margin-bottom:0">Resumo</div>
+        <span class="badge" id="badgeCount"></span>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-box">
+          <div class="s-label">Valor original</div>
+          <div class="s-val" id="resOriginal"></div>
+        </div>
+        <div class="summary-box highlight">
+          <div class="s-label">Valor a pagar</div>
+          <div class="s-val" id="resPagar"></div>
+        </div>
+        <div class="summary-box highlight">
+          <div class="s-label">Desconto s/ compra</div>
+          <div class="s-val" id="resPercentual"></div>
+        </div>
+        <div class="summary-box full">
+          <div class="s-label">Economia total</div>
+          <div class="s-val big" id="resEconomia"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="card-title">Detalhes por parcela</div>
+      <div class="parcelas-list" id="listaResultado"></div>
+    </div>
+
+  </div>
+
+  <script>
+    function fmt(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+    function fmtDate(d) { return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+    function addMonths(date, n) { const d = new Date(date); d.setMonth(d.getMonth() + n); return d; }
+    function calcDesconto(valor, dias, taxaAnual) {
+      const taxaDiaria = Math.pow(1 + taxaAnual / 100, 1 / 365) - 1;
+      return valor / Math.pow(1 + taxaDiaria, Math.max(dias, 0));
+    }
+
+    let parcelas = [];
+    let selecionadas = new Set();
+
+    const elTaxa      = document.getElementById('taxaAnual');
+    const elDiaVenc   = document.getElementById('diaVenc');
+    const elDiasFech  = document.getElementById('diasFech');
+    const elTotal     = document.getElementById('totalCompra');
+    const elNum       = document.getElementById('numParcelas');
+    const elData      = document.getElementById('dataCompra');
+    const elCardParc  = document.getElementById('cardParcelas');
+    const elLista     = document.getElementById('listaParcelas');
+    const elToggleAll = document.getElementById('btnToggleAll');
+    const elErro      = document.getElementById('erro');
+    const elBtnCalc   = document.getElementById('btnCalc');
+    const elCardRes   = document.getElementById('cardResultado');
+    const elBadge     = document.getElementById('badgeCount');
+    const elOriginal  = document.getElementById('resOriginal');
+    const elPagar     = document.getElementById('resPagar');
+    const elEconomia  = document.getElementById('resEconomia');
+    const elListaRes  = document.getElementById('listaResultado');
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    elData.value = hoje.toISOString().split('T')[0];
+
+    function gerarParcelas() {
+      const total    = parseFloat(elTotal.value);
+      const n        = parseInt(elNum.value);
+      const diaVenc  = parseInt(elDiaVenc.value);
+      const diasFech = parseInt(elDiasFech.value) || 0;
+      const compra   = new Date(elData.value + 'T00:00:00');
+
+      if (!elTotal.value || isNaN(total) || isNaN(n) || n < 1 || isNaN(diaVenc)) {
+        elCardParc.classList.add('hidden');
+        elBtnCalc.classList.add('hidden');
+        parcelas = []; selecionadas.clear(); return;
+      }
+
+      const valorParcela = total / n;
+      parcelas = [];
+      for (let i = 1; i <= n; i++) {
+        let vencBase = new Date(compra);
+        vencBase.setDate(diaVenc);
+        const fechamento = new Date(vencBase);
+        fechamento.setDate(fechamento.getDate() - diasFech);
+        if (compra >= fechamento) vencBase = addMonths(vencBase, 1);
+        const venc = addMonths(vencBase, i - 1);
+        const dias = Math.round((venc - hoje) / (1000 * 60 * 60 * 24));
+        parcelas.push({ num: i, venc, dias, valor: valorParcela });
+      }
+
+      selecionadas.clear();
+      renderParcelas();
+      elCardParc.classList.remove('hidden');
+      elBtnCalc.classList.remove('hidden');
+      elCardRes.classList.add('hidden');
+      esconderErro();
+    }
+
+    function renderParcelas() {
+      const taxa = parseFloat(elTaxa.value) || 9.5;
+      elLista.innerHTML = '';
+      parcelas.forEach(p => {
+        const sel = selecionadas.has(p.num);
+        const comDesc = calcDesconto(p.valor, p.dias, taxa);
+        const eco = p.valor - comDesc;
+        const row = document.createElement('div');
+        row.className = 'parcela-row' + (sel ? ' selected' : '');
+        row.innerHTML = `
+          <div class="p-num">${p.num}</div>
+          <div>
+            <div class="p-venc">${fmtDate(p.venc)}</div>
+            <div class="p-dias">${p.dias}d até venc.</div>
+          </div>
+          <div class="p-val">
+            <div class="p-original">${fmt(p.valor)}</div>
+            <div class="p-desc">${fmt(comDesc)}</div>
+          </div>
+          <div class="p-eco">
+            <div class="p-eco-val">-${fmt(eco)}</div>
+            <div class="p-eco-label">economia</div>
+          </div>
+        `;
+        row.addEventListener('click', () => toggleParcela(p.num));
+        elLista.appendChild(row);
+      });
+      atualizarBotaoCalc();
+      atualizarToggleAll();
+    }
+
+    function toggleParcela(num) {
+      if (selecionadas.has(num)) selecionadas.delete(num); else selecionadas.add(num);
+      renderParcelas();
+      elCardRes.classList.add('hidden');
+      esconderErro();
+    }
+
+    function toggleAll() {
+      if (selecionadas.size === parcelas.length) selecionadas.clear();
+      else parcelas.forEach(p => selecionadas.add(p.num));
+      renderParcelas();
+      elCardRes.classList.add('hidden');
+    }
+
+    function atualizarToggleAll() {
+      elToggleAll.textContent = selecionadas.size === parcelas.length ? 'Desmarcar todas' : 'Marcar todas';
+    }
+
+    function atualizarBotaoCalc() {
+      const n = selecionadas.size;
+      elBtnCalc.textContent = n > 0 ? `Calcular antecipação (${n} parcela${n > 1 ? 's' : ''})` : 'Calcular antecipação';
+    }
+
+    function calcular() {
+      esconderErro();
+      if (!elTotal.value || isNaN(parseFloat(elTotal.value))) { mostrarErro('Informe o valor total da compra.'); return; }
+      if (selecionadas.size === 0) { mostrarErro('Selecione ao menos uma parcela para antecipar.'); return; }
+      const taxa = parseFloat(elTaxa.value);
+      if (isNaN(taxa) || taxa <= 0) { mostrarErro('Informe uma taxa anual válida.'); return; }
+
+      let totalOriginal = 0, totalComDesconto = 0;
+      const detalhes = [];
+      parcelas.forEach(p => {
+        if (!selecionadas.has(p.num)) return;
+        const comDesc = calcDesconto(p.valor, p.dias, taxa);
+        const economia = p.valor - comDesc;
+        totalOriginal += p.valor;
+        totalComDesconto += comDesc;
+        detalhes.push({ ...p, comDesc, economia });
+      });
+
+      const economia = totalOriginal - totalComDesconto;
+      const totalCompra = parseFloat(elTotal.value);
+      const percentual = (economia / totalCompra) * 100;
+
+      elOriginal.textContent = fmt(totalOriginal);
+      elPagar.textContent    = fmt(totalComDesconto);
+      elEconomia.textContent = fmt(economia);
+      document.getElementById('resPercentual').textContent = percentual.toFixed(2).replace('.', ',') + '%';
+      elOriginal.className   = 's-val' + (totalOriginal > 9999 ? ' small' : '');
+      elPagar.className      = 's-val' + (totalComDesconto > 9999 ? ' small' : '');
+      elBadge.textContent    = `${detalhes.length} parcela${detalhes.length > 1 ? 's' : ''}`;
+
+      elListaRes.innerHTML = '';
+      detalhes.forEach(d => {
+        const row = document.createElement('div');
+        row.className = 'parcela-row selected';
+        row.innerHTML = `
+          <div class="p-num">${d.num}</div>
+          <div>
+            <div class="p-venc">${fmtDate(d.venc)}</div>
+            <div class="p-dias">${d.dias}d até venc.</div>
+          </div>
+          <div class="p-val">
+            <div class="p-original">${fmt(d.valor)}</div>
+            <div class="p-desc">${fmt(d.comDesc)}</div>
+          </div>
+          <div class="p-eco">
+            <div class="p-eco-val">-${fmt(d.economia)}</div>
+            <div class="p-eco-label">economia</div>
+          </div>
+        `;
+        elListaRes.appendChild(row);
+      });
+
+      elCardRes.classList.remove('hidden');
+      elCardRes.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function mostrarErro(msg) { elErro.textContent = msg; elErro.classList.remove('hidden'); }
+    function esconderErro() { elErro.classList.add('hidden'); }
+
+    [elTotal, elNum, elData, elDiaVenc, elDiasFech].forEach(el => el.addEventListener('input', gerarParcelas));
+    elTaxa.addEventListener('input', () => { if (parcelas.length > 0) renderParcelas(); });
+    elToggleAll.addEventListener('click', toggleAll);
+    elBtnCalc.addEventListener('click', calcular);
+  </script>
+</body>
+</html>
